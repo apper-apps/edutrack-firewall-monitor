@@ -17,9 +17,9 @@ const StudentForm = ({ student, onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (student) {
+if (student) {
       setFormData({
-        name: student.name || "",
+        name: student.Name || "",
         email: student.email || "",
         phone: student.phone || "",
         gradeLevel: student.gradeLevel || "",

@@ -1,96 +1,178 @@
-import studentsData from "@/services/mockData/students.json";
-
 class StudentService {
   constructor() {
-    this.students = [...studentsData];
+    // Initialize ApperClient
+    const { ApperClient } = window.ApperSDK;
+    this.apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
   }
 
   async getAll() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([...this.students]);
-      }, 300);
-    });
+    try {
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "email" } },
+          { field: { Name: "phone" } },
+          { field: { Name: "gradeLevel" } },
+          { field: { Name: "section" } },
+          { field: { Name: "enrollmentDate" } },
+          { field: { Name: "status" } }
+        ],
+        orderBy: [
+          {
+            fieldName: "Name",
+            sorttype: "ASC"
+          }
+        ]
+      };
+
+      const response = await this.apperClient.fetchRecords('student', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching students:", error);
+      throw error;
+    }
   }
 
   async getById(id) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const student = this.students.find(s => s.Id === id);
-        if (student) {
-          resolve({ ...student });
-        } else {
-          reject(new Error("Student not found"));
-        }
-      }, 200);
-    });
+    try {
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "email" } },
+          { field: { Name: "phone" } },
+          { field: { Name: "gradeLevel" } },
+          { field: { Name: "section" } },
+          { field: { Name: "enrollmentDate" } },
+          { field: { Name: "status" } }
+        ]
+      };
+
+      const response = await this.apperClient.getRecordById('student', id, params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching student with ID ${id}:`, error);
+      throw error;
+    }
   }
 
   async create(studentData) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newStudent = {
-          Id: Math.max(...this.students.map(s => s.Id)) + 1,
-          ...studentData,
-          enrollmentDate: new Date(studentData.enrollmentDate).toISOString()
-        };
-        this.students.push(newStudent);
-        resolve({ ...newStudent });
-      }, 400);
-    });
+    try {
+      // Only include Updateable fields
+      const params = {
+        records: [{
+          Name: studentData.name,
+          email: studentData.email,
+          phone: studentData.phone,
+          gradeLevel: studentData.gradeLevel,
+          section: studentData.section,
+          enrollmentDate: studentData.enrollmentDate,
+          status: studentData.status
+        }]
+      };
+
+      const response = await this.apperClient.createRecord('student', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        if (failedRecords.length > 0) {
+          console.error(`Failed to create ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to create student');
+        }
+        return response.results[0].data;
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error creating student:", error);
+      throw error;
+    }
   }
 
   async update(id, studentData) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = this.students.findIndex(s => s.Id === id);
-        if (index !== -1) {
-          this.students[index] = { 
-            ...this.students[index], 
-            ...studentData,
-            enrollmentDate: new Date(studentData.enrollmentDate).toISOString()
-          };
-          resolve({ ...this.students[index] });
-        } else {
-          reject(new Error("Student not found"));
+    try {
+      // Only include Updateable fields
+      const params = {
+        records: [{
+          Id: id,
+          Name: studentData.name,
+          email: studentData.email,
+          phone: studentData.phone,
+          gradeLevel: studentData.gradeLevel,
+          section: studentData.section,
+          enrollmentDate: studentData.enrollmentDate,
+          status: studentData.status
+        }]
+      };
+
+      const response = await this.apperClient.updateRecord('student', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        if (failedRecords.length > 0) {
+          console.error(`Failed to update ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to update student');
         }
-      }, 400);
-    });
+        return response.results[0].data;
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error updating student:", error);
+      throw error;
+    }
   }
 
   async delete(id) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = this.students.findIndex(s => s.Id === id);
-        if (index !== -1) {
-          const deletedStudent = this.students.splice(index, 1)[0];
-          resolve(deletedStudent);
-        } else {
-          reject(new Error("Student not found"));
+    try {
+      const params = {
+        RecordIds: [id]
+      };
+
+      const response = await this.apperClient.deleteRecord('student', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        if (failedRecords.length > 0) {
+          console.error(`Failed to delete ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to delete student');
         }
-      }, 300);
-    });
-  }
+      }
 
-  async getByGradeLevel(gradeLevel) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const filteredStudents = this.students.filter(s => s.gradeLevel === gradeLevel);
-        resolve([...filteredStudents]);
-      }, 250);
-    });
-  }
-
-  async search(query) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const filteredStudents = this.students.filter(s => 
-          s.name.toLowerCase().includes(query.toLowerCase()) ||
-          s.email.toLowerCase().includes(query.toLowerCase())
-        );
-        resolve([...filteredStudents]);
-      }, 200);
-    });
+      return true;
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      throw error;
+    }
   }
 }
 

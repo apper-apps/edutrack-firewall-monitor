@@ -49,9 +49,9 @@ const Students = () => {
   useEffect(() => {
     let filtered = students;
 
-    if (searchQuery) {
+if (searchQuery) {
       filtered = filtered.filter(student =>
-        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        student.Name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         student.email.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -239,12 +239,12 @@ const Students = () => {
           <div className="space-y-6">
             <div className="flex items-center space-x-4">
               <div className="h-16 w-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
-                <span className="text-xl font-bold text-white">
-                  {selectedStudent.name.charAt(0)}
+<span className="text-xl font-bold text-white">
+                  {selectedStudent.Name.charAt(0)}
                 </span>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">{selectedStudent.name}</h3>
+<h3 className="text-lg font-semibold text-gray-900">{selectedStudent.Name}</h3>
                 <p className="text-gray-600">{selectedStudent.email}</p>
                 <Badge variant={selectedStudent.status === "active" ? "active" : "inactive"}>
                   {selectedStudent.status}

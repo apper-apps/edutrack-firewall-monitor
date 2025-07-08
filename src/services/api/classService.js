@@ -1,79 +1,170 @@
-import classesData from "@/services/mockData/classes.json";
-
 class ClassService {
   constructor() {
-    this.classes = [...classesData];
+    // Initialize ApperClient
+    const { ApperClient } = window.ApperSDK;
+    this.apperClient = new ApperClient({
+      apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+      apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY
+    });
   }
 
   async getAll() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve([...this.classes]);
-      }, 300);
-    });
+    try {
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "gradeLevel" } },
+          { field: { Name: "section" } },
+          { field: { Name: "capacity" } }
+        ],
+        orderBy: [
+          {
+            fieldName: "gradeLevel",
+            sorttype: "ASC"
+          },
+          {
+            fieldName: "section",
+            sorttype: "ASC"
+          }
+        ]
+      };
+
+      const response = await this.apperClient.fetchRecords('class', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      return response.data || [];
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+      throw error;
+    }
   }
 
   async getById(id) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const classItem = this.classes.find(c => c.Id === id);
-        if (classItem) {
-          resolve({ ...classItem });
-        } else {
-          reject(new Error("Class not found"));
-        }
-      }, 200);
-    });
+    try {
+      const params = {
+        fields: [
+          { field: { Name: "Name" } },
+          { field: { Name: "gradeLevel" } },
+          { field: { Name: "section" } },
+          { field: { Name: "capacity" } }
+        ]
+      };
+
+      const response = await this.apperClient.getRecordById('class', id, params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching class with ID ${id}:`, error);
+      throw error;
+    }
   }
 
   async create(classData) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newClass = {
-          Id: Math.max(...this.classes.map(c => c.Id)) + 1,
-          ...classData
-        };
-        this.classes.push(newClass);
-        resolve({ ...newClass });
-      }, 400);
-    });
+    try {
+      // Only include Updateable fields
+      const params = {
+        records: [{
+          Name: classData.name,
+          gradeLevel: classData.gradeLevel,
+          section: classData.section,
+          capacity: classData.capacity
+        }]
+      };
+
+      const response = await this.apperClient.createRecord('class', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        if (failedRecords.length > 0) {
+          console.error(`Failed to create ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to create class');
+        }
+        return response.results[0].data;
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error creating class:", error);
+      throw error;
+    }
   }
 
   async update(id, classData) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = this.classes.findIndex(c => c.Id === id);
-        if (index !== -1) {
-          this.classes[index] = { ...this.classes[index], ...classData };
-          resolve({ ...this.classes[index] });
-        } else {
-          reject(new Error("Class not found"));
+    try {
+      // Only include Updateable fields
+      const params = {
+        records: [{
+          Id: id,
+          Name: classData.name,
+          gradeLevel: classData.gradeLevel,
+          section: classData.section,
+          capacity: classData.capacity
+        }]
+      };
+
+      const response = await this.apperClient.updateRecord('class', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        if (failedRecords.length > 0) {
+          console.error(`Failed to update ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to update class');
         }
-      }, 400);
-    });
+        return response.results[0].data;
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Error updating class:", error);
+      throw error;
+    }
   }
 
   async delete(id) {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const index = this.classes.findIndex(c => c.Id === id);
-        if (index !== -1) {
-          const deletedClass = this.classes.splice(index, 1)[0];
-          resolve(deletedClass);
-        } else {
-          reject(new Error("Class not found"));
-        }
-      }, 300);
-    });
-  }
+    try {
+      const params = {
+        RecordIds: [id]
+      };
 
-  async getByGradeLevel(gradeLevel) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const filteredClasses = this.classes.filter(c => c.gradeLevel === gradeLevel);
-        resolve([...filteredClasses]);
-      }, 250);
-    });
+      const response = await this.apperClient.deleteRecord('class', params);
+
+      if (!response.success) {
+        console.error(response.message);
+        throw new Error(response.message);
+      }
+
+      if (response.results) {
+        const failedRecords = response.results.filter(result => !result.success);
+        if (failedRecords.length > 0) {
+          console.error(`Failed to delete ${failedRecords.length} records:${JSON.stringify(failedRecords)}`);
+          throw new Error(failedRecords[0].message || 'Failed to delete class');
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting class:", error);
+      throw error;
+    }
   }
 }
 
